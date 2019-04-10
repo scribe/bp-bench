@@ -12,6 +12,7 @@ plugins {
 
 repositories {
     jcenter()
+    maven("http://dl.bintray.com/spectralogic/ds3")
 }
 
 tasks.withType<KotlinCompile> {
@@ -25,6 +26,7 @@ dependencies {
     implementation("com.github.ajalt:clikt:${project.property("clikt")}")
     implementation("io.github.microutils:kotlin-logging:${project.property("kotlinLogging")}")
     implementation("org.jlleitschuh.guice:kotlin-guiced-core:${project.property("kotlinGuiced")}")
+    implementation("com.spectralogic.ds3:ds3-sdk:${project.property("ds3")}")
 
     testImplementation("org.jetbrains.kotlin:kotlin-test")
     testImplementation("org.jetbrains.kotlin:kotlin-test-junit")
