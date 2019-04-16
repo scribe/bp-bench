@@ -15,7 +15,6 @@ import com.google.inject.name.Named
 
 class MainCommand
     @Inject constructor(
-        @Named("SustainedWrite") sustainedWriteCommand: CliktCommand,
         @Named("WriteToTape") writeToTapeCommand: CliktCommand,
         @Named("GetFromTape") getFromTapeCommand: CliktCommand
     )
@@ -23,7 +22,6 @@ class MainCommand
 
     init {
         subcommands(
-            sustainedWriteCommand,
             writeToTapeCommand,
             getFromTapeCommand
         )
