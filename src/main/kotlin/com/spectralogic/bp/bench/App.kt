@@ -7,9 +7,11 @@ package com.spectralogic.bp.bench
 
 import com.github.ajalt.clikt.core.CliktCommand
 import com.google.inject.Guice
+import com.google.inject.name.Named
 import com.google.inject.name.Names
 import com.spectralogic.bp.bench.cli.GetFromTapeCommand
 import com.spectralogic.bp.bench.cli.MainCommand
+import com.spectralogic.bp.bench.cli.SustainedWriteCommand
 import com.spectralogic.bp.bench.cli.WriteToTapeCommand
 import org.jlleitschuh.guice.module
 
