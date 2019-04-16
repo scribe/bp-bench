@@ -41,7 +41,7 @@ class WriteToTapeCommand : CliktCommand(name = "put") {
 
     private val endpoint by option(
         "-bp",
-        "--blackperl"
+        "--blackpearl"
     ).prompt("Black Pearl data path").validate { require(it.isNotEmpty()) { "Black Pearl data path cannot be empty" } }
     private val clientId: String by option(
         "-a",
