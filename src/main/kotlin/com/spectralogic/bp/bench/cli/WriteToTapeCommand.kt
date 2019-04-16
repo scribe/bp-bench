@@ -118,5 +118,4 @@ fun Ds3ClientHelpers.ensureBucketExistsByName(bucket: String, dataPolicy: String
         }
 
     }
-
 }
