@@ -6,7 +6,6 @@
  
 package com.spectralogic.bp.bench.cli
 
-import com.spectralogic.ds3client.utils.NotImplementedException
 import java.nio.ByteBuffer
 import java.nio.channels.SeekableByteChannel
 

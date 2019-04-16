@@ -15,7 +15,6 @@ import com.github.ajalt.clikt.core.CliktCommand
 import com.github.ajalt.clikt.output.TermUi
 import com.github.ajalt.clikt.parameters.options.option
 import com.github.ajalt.clikt.parameters.options.prompt
-import com.github.ajalt.clikt.parameters.options.required
 import com.github.ajalt.clikt.parameters.options.validate
 import com.github.ajalt.clikt.parameters.types.choice
 import com.github.ajalt.clikt.parameters.types.int
@@ -28,8 +27,6 @@ import com.spectralogic.ds3client.helpers.Ds3ClientHelpers
 import com.spectralogic.ds3client.models.bulk.Ds3Object
 import com.spectralogic.ds3client.models.common.Credentials
 import com.spectralogic.ds3client.networking.FailedRequestException
-import java.io.IOException
-import java.util.UUID
 
 class WriteToTapeCommand : CliktCommand(name = "put") {
     companion object {
@@ -47,12 +44,12 @@ class WriteToTapeCommand : CliktCommand(name = "put") {
         "--blackperl"
     ).prompt("Black Pearl data path").validate { require(it.isNotEmpty()) { "Black Pearl data path cannot be empty" } }
     private val clientId: String by option(
-        "-c",
-        "--clientid"
+        "-a",
+        "--accessid"
     ).prompt("Black Pearl access id?").validate { require(it.isNotEmpty()) { "User name cannot be empty" } }
     private val key: String by option(
-        "-p",
-        "--password"
+        "-s",
+        "--secretkey"
     ).prompt("Black Pearl secret key?").validate { require(it.isNotEmpty()) { "Password cannot be empty" } }
     private val bucket: String by option(
         "-b",
@@ -63,7 +60,7 @@ class WriteToTapeCommand : CliktCommand(name = "put") {
         "--number"
     ).int().prompt("Number of files").validate { require(it > 0) { "Number of files must be positive" } }
     private val size: Long by option(
-        "-s",
+        "-S",
         "--size"
     ).long().prompt("Size of file(s)").validate { require(it >= 0L) { "Size of files must be non-negative" } }
     private val sizeUnits by option("-u", "--units").choice(

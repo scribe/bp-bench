@@ -15,9 +15,6 @@ import com.github.ajalt.clikt.core.CliktCommand
 import com.github.ajalt.clikt.parameters.options.option
 import com.github.ajalt.clikt.parameters.options.prompt
 import com.github.ajalt.clikt.parameters.options.validate
-import com.github.ajalt.clikt.parameters.types.choice
-import com.github.ajalt.clikt.parameters.types.int
-import com.github.ajalt.clikt.parameters.types.long
 import com.spectralogic.ds3client.Ds3ClientBuilder
 import com.spectralogic.ds3client.helpers.Ds3ClientHelpers
 import com.spectralogic.ds3client.models.common.Credentials
@@ -28,12 +25,12 @@ class GetFromTapeCommand: CliktCommand(name = "get") {
         "--blackpearl"
     ).prompt("Black Pearl data path").validate { require(it.isNotEmpty()) { "Black Pearl data path cannot be empty" } }
     private val clientId: String by option(
-        "-c",
-        "--clientid"
+        "-a",
+        "--accessid"
     ).prompt("Black Pearl access id?").validate { require(it.isNotEmpty()) { "User name cannot be empty" } }
     private val key: String by option(
-        "-p",
-        "--password"
+        "-s",
+        "--secretkey"
     ).prompt("Black Pearl secret key?").validate { require(it.isNotEmpty()) { "Password cannot be empty" } }
     private val bucket: String by option(
         "-b",
