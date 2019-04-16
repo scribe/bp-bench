@@ -116,6 +116,5 @@ fun Ds3ClientHelpers.ensureBucketExistsByName(bucket: String, dataPolicy: String
 
             TermUi.echo("Creating $bucket failed because it was created by another thread or process")
         }
-
     }
 }
