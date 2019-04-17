@@ -17,8 +17,8 @@ class MainCommand
     @Inject constructor(
         @Named("WriteToTape") writeToTapeCommand: CliktCommand,
         @Named("GetFromTape") getFromTapeCommand: CliktCommand
-    )
-    : CliktCommand(name = "bpBench") {
+    ) :
+    CliktCommand(name = "bpBench") {
 
     init {
         subcommands(
@@ -27,7 +27,7 @@ class MainCommand
         )
     }
 
-    val verbose by option("-v", "--verbose", help = "enable verbose output").flag()
+    private val verbose by option("-v", "--verbose", help = "enable verbose output").flag()
 
     override fun run() {
         findObject { verbose }

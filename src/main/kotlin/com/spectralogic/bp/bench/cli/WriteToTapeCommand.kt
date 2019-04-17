@@ -8,17 +8,17 @@
  *   Copyright 2014-2019 Spectra Logic Corporation. All Rights Reserved.
  * ***************************************************************************
  */
- 
+
 package com.spectralogic.bp.bench.cli
 
-import com.github.ajalt.clikt.core.CliktCommand
-import com.github.ajalt.clikt.output.TermUi
+import com.github.ajalt.clikt.output.TermUi.echo
+import com.github.ajalt.clikt.parameters.options.convert
 import com.github.ajalt.clikt.parameters.options.option
 import com.github.ajalt.clikt.parameters.options.prompt
 import com.github.ajalt.clikt.parameters.options.validate
 import com.github.ajalt.clikt.parameters.types.choice
+import com.github.ajalt.clikt.parameters.types.double
 import com.github.ajalt.clikt.parameters.types.int
-import com.github.ajalt.clikt.parameters.types.long
 import com.spectralogic.ds3client.Ds3ClientBuilder
 import com.spectralogic.ds3client.commands.HeadBucketRequest
 import com.spectralogic.ds3client.commands.HeadBucketResponse
@@ -28,74 +28,54 @@ import com.spectralogic.ds3client.models.bulk.Ds3Object
 import com.spectralogic.ds3client.models.common.Credentials
 import com.spectralogic.ds3client.networking.FailedRequestException
 
-class WriteToTapeCommand : CliktCommand(name = "put") {
-    companion object {
-        val sizeMap = mapOf<String, Long>(
-            Pair("b", 1L),
-            Pair("Kb", 3L),
-            Pair("Mb", 6L),
-            Pair("Gb", 9L),
-            Pair("Tb", 12L)
-        )
-    }
+class WriteToTapeCommand :
+    BpCommand(name = "put", help = "Attempt to put <NUMBER> objects of <SIZE> to <BUCKET> without disk IO") {
+    private val choices = SizeUnits.values().map { it.name }.toTypedArray()
 
-    private val endpoint by option(
-        "-bp",
-        "--blackpearl"
-    ).prompt("Black Pearl data path").validate { require(it.isNotEmpty()) { "Black Pearl data path cannot be empty" } }
-    private val clientId: String by option(
-        "-a",
-        "--accessid"
-    ).prompt("Black Pearl access id?").validate { require(it.isNotEmpty()) { "User name cannot be empty" } }
-    private val key: String by option(
-        "-s",
-        "--secretkey"
-    ).prompt("Black Pearl secret key?").validate { require(it.isNotEmpty()) { "Password cannot be empty" } }
-    private val bucket: String by option(
-        "-b",
-        "--bucket"
-    ).prompt("Target Black Pearl bucket").validate { require(it.isNotEmpty()) { "Bucket name cannot be empty" } }
     private val itemNumber: Int by option(
         "-n",
-        "--number"
+        "--number",
+        help = "Number of files to write"
     ).int().prompt("Number of files").validate { require(it > 0) { "Number of files must be positive" } }
-    private val size: Long by option(
+    private val size by option(
         "-S",
-        "--size"
-    ).long().prompt("Size of file(s)").validate { require(it >= 0L) { "Size of files must be non-negative" } }
-    private val sizeUnits by option("-u", "--units").choice(
-        "b",
-        "Kb",
-        "Mb",
-        "Gb",
-        "Tb"
-    ).prompt("Units for size: (b, Kb, Mb, Gb, Tb")
+        "--size",
+        help = "Size of each file to write"
+    ).double().prompt("Size of file(s)").validate { require(it >= 0L) { "Size of files must be non-negative" } }
+    private val sizeUnit: SizeUnits by option(
+        "-u",
+        "--units",
+        help = "Units of files to write <${choices.joinToString(",")}>"
+    ).choice(*choices)
+        .convert {
+            SizeUnits.valueOf(it.toUpperCase())
+        }.prompt("Units for size: (${choices.joinToString(",")})")
     private val dataPolicy by option(
         "-d",
-        "--datapolicy"
-    )
+        "--datapolicy",
+        envvar = "BP_DATA_POLICY",
+        help = "name of the data policy to create the bucket with"
+        )
         .prompt()
         .validate { require(it.isNotEmpty()) { "Data policy must not be blank" } }
 
     override fun run() {
         val client = Ds3ClientHelpers.wrap(
-            Ds3ClientBuilder.create(endpoint, Credentials(clientId, key))
+            Ds3ClientBuilder.create(endpoint, Credentials(clientId, secretKey))
                 .withCertificateVerification(false)
                 .build()
         )
         client.ensureBucketExistsByName(bucket, dataPolicy)
         val job = client.startWriteJob(bucket, ds3ObjectSequence().toList())
-        job.transfer { _ -> AzSeekableByteChannel() }
+        job.transfer { AzSeekableByteChannel() }
     }
 
     private var itemName: Long = 0L
 
     private fun ds3ObjectSequence(): Sequence<Ds3Object> {
         return generateSequence {
-            val exponent: Long = sizeMap[sizeUnits]!!
             Ds3Object(
-                "bp-benchmark-${itemName++}.txt",
-                (size * Math.pow(size.toDouble(), exponent.toDouble())).toLong()
+                "bp-benchmark-${itemName++}.txt", (size * Math.pow(size, sizeUnit.power)).toLong()
             )
         }.take(itemNumber)
     }
@@ -111,7 +91,7 @@ fun Ds3ClientHelpers.ensureBucketExistsByName(bucket: String, dataPolicy: String
                 throw var5
             }
 
-            TermUi.echo("Creating $bucket failed because it was created by another thread or process")
+            echo("Creating $bucket failed because it was created by another thread or process")
         }
     }
 }

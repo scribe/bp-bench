@@ -3,7 +3,7 @@
  *   Copyright 2014-2019 Spectra Logic Corporation. All Rights Reserved.
  * ***************************************************************************
  */
- 
+
 package com.spectralogic.bp.bench.cli
 
 import java.nio.ByteBuffer
@@ -41,7 +41,7 @@ class AzSeekableByteChannel : SeekableByteChannel {
         val l = src.remaining()
         size += l
         position += l
-        src.position(src.position()+l)
+        src.position(src.position() + l)
         return l
     }
 

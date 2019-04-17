@@ -13,7 +13,6 @@ import com.spectralogic.bp.bench.cli.MainCommand
 import com.spectralogic.bp.bench.cli.WriteToTapeCommand
 import org.jlleitschuh.guice.module
 
-
 fun main(args: Array<String>) {
     Guice
         .createInjector(
