@@ -5,10 +5,7 @@
  */
 package com.spectralogic.bp.bench
 
-import kotlin.test.Test
-
 class AppTest {
-    @Test
     fun testAppHasAGreeting() {
         assert(true)
     }

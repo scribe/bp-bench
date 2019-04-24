@@ -7,9 +7,14 @@
 package com.spectralogic.bp.bench.cli
 
 enum class SizeUnits(val power: Double) {
-    B(1.0),
+    B(0.0),
     KB(3.0),
     MB(6.0),
     GB(9.0),
-    TB(12.0)
+    TB(12.0);
+
+    companion object {
+        fun parse(name: String) = SizeUnits.valueOf(name.trim().toUpperCase())
+        fun names() = SizeUnits.values().map { it.name }.toTypedArray()
+    }
 }

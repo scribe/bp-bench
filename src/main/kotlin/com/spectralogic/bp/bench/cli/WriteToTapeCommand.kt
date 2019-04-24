@@ -3,15 +3,9 @@
  *   Copyright 2014-2019 Spectra Logic Corporation. All Rights Reserved.
  * ***************************************************************************
  */
-/*
- * ****************************************************************************
- *   Copyright 2014-2019 Spectra Logic Corporation. All Rights Reserved.
- * ***************************************************************************
- */
 
 package com.spectralogic.bp.bench.cli
 
-import com.github.ajalt.clikt.output.TermUi.echo
 import com.github.ajalt.clikt.parameters.options.convert
 import com.github.ajalt.clikt.parameters.options.option
 import com.github.ajalt.clikt.parameters.options.prompt
@@ -24,13 +18,18 @@ import com.spectralogic.ds3client.commands.HeadBucketRequest
 import com.spectralogic.ds3client.commands.HeadBucketResponse
 import com.spectralogic.ds3client.commands.spectrads3.PutBucketSpectraS3Request
 import com.spectralogic.ds3client.helpers.Ds3ClientHelpers
+import com.spectralogic.ds3client.helpers.options.WriteJobOptions
+import com.spectralogic.ds3client.models.Priority
 import com.spectralogic.ds3client.models.bulk.Ds3Object
 import com.spectralogic.ds3client.models.common.Credentials
 import com.spectralogic.ds3client.networking.FailedRequestException
+import java.nio.channels.Channels
+import java.time.Instant
 
 class WriteToTapeCommand :
     BpCommand(name = "put", help = "Attempt to put <NUMBER> objects of <SIZE> to <BUCKET> without disk IO") {
-    private val choices = SizeUnits.values().map { it.name }.toTypedArray()
+
+    private val unitList = SizeUnits.names().joinToString(",")
 
     private val itemNumber: Int by option(
         "-n",
@@ -45,29 +44,29 @@ class WriteToTapeCommand :
     private val sizeUnit: SizeUnits by option(
         "-u",
         "--units",
-        help = "Units of files to write <${choices.joinToString(",")}>"
-    ).choice(*choices)
+        help = "Units of files to write <$unitList>"
+    ).choice(*SizeUnits.names())
         .convert {
-            SizeUnits.valueOf(it.toUpperCase())
-        }.prompt("Units for size: (${choices.joinToString(",")})")
+            SizeUnits.parse(it)
+        }.prompt("Units for size: ($unitList)")
     private val dataPolicy by option(
         "-d",
         "--datapolicy",
         envvar = "BP_DATA_POLICY",
         help = "name of the data policy to create the bucket with"
-        )
+    )
         .prompt()
         .validate { require(it.isNotEmpty()) { "Data policy must not be blank" } }
 
     override fun run() {
         val client = Ds3ClientHelpers.wrap(
             Ds3ClientBuilder.create(endpoint, Credentials(clientId, secretKey))
-                .withCertificateVerification(false)
+                .withHttps(false)
                 .build()
         )
         client.ensureBucketExistsByName(bucket, dataPolicy)
-        val job = client.startWriteJob(bucket, ds3ObjectSequence().toList())
-        job.transfer { AzSeekableByteChannel() }
+        val job = client.startWriteJob(bucket, ds3ObjectSequence().toList(), WriteJobOptions.create().withPriority(Priority.URGENT))
+        job.transfer { PositionableReadOnlySeekableByteChannel(Channels.newChannel(AZInputStream())) }
     }
 
     private var itemName: Long = 0L
@@ -75,7 +74,8 @@ class WriteToTapeCommand :
     private fun ds3ObjectSequence(): Sequence<Ds3Object> {
         return generateSequence {
             Ds3Object(
-                "bp-benchmark-${itemName++}.txt", (size * Math.pow(size, sizeUnit.power)).toLong()
+                "bp-benchmark-${itemName++}-${Instant.now().toEpochMilli()}.txt",
+                (size * Math.pow(10.0, sizeUnit.power)).toLong()
             )
         }.take(itemNumber)
     }
@@ -88,10 +88,10 @@ fun Ds3ClientHelpers.ensureBucketExistsByName(bucket: String, dataPolicy: String
             this.client.putBucketSpectraS3(PutBucketSpectraS3Request(bucket).withDataPolicyId(dataPolicy))
         } catch (var5: FailedRequestException) {
             if (var5.statusCode != 409) {
-                throw var5
+                error(var5.message ?: "Encountered an unknown error creating bucket")
             }
 
-            echo("Creating $bucket failed because it was created by another thread or process")
+            error("Creating $bucket failed because it was created by another thread or process")
         }
     }
 }
