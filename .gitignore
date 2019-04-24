@@ -2,10 +2,14 @@
 .gradle
 
 # Ignore Gradle build output directory
-build
+build/
+out/
+.kotlintest/
 
 # Ignore Java specific files
 *.class
 
 .idea
 *.iml
+
+.DS_Store
