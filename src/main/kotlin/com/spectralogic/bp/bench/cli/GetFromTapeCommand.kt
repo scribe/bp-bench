@@ -18,9 +18,11 @@ class GetFromTapeCommand :
         val client = Ds3ClientHelpers.wrap(
             Ds3ClientBuilder.create(endpoint, Credentials(clientId, secretKey))
                 .withHttps(false)
+                .withBufferSize(bufferSize)
                 .build()
         )
         client.startReadAllJob(bucket)
-            .transfer { PositionableReadOnlySeekableByteChannel(Channels.newChannel(AZInputStream())) }
+            .withMaxParallelRequests(threads)
+            .transfer(MemoryObjectChannelBuilder(bufferSize, 0L))
     }
 }

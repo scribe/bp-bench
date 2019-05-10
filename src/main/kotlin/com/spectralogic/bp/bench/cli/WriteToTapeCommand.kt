@@ -62,11 +62,15 @@ class WriteToTapeCommand :
         val client = Ds3ClientHelpers.wrap(
             Ds3ClientBuilder.create(endpoint, Credentials(clientId, secretKey))
                 .withHttps(false)
+                .withBufferSize(bufferSize)
                 .build()
         )
         client.ensureBucketExistsByName(bucket, dataPolicy)
-        val job = client.startWriteJob(bucket, ds3ObjectSequence().toList(), WriteJobOptions.create().withPriority(Priority.URGENT))
-        job.transfer { PositionableReadOnlySeekableByteChannel(Channels.newChannel(AZInputStream())) }
+        val job = client.startWriteJob(bucket, ds3ObjectSequence().toList(), WriteJobOptions.create()
+            .withPriority(Priority.URGENT))
+        job
+            .withMaxParallelRequests(threads)
+            .transfer(MemoryObjectChannelBuilder(bufferSize, (size * Math.pow(10.0, sizeUnit.power)).toLong()))
     }
 
     private var itemName: Long = 0L
