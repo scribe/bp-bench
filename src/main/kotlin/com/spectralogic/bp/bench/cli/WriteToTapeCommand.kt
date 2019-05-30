@@ -29,7 +29,7 @@ import kotlin.random.Random
 class WriteToTapeCommand :
     BpCommand(name = "put", help = "Attempt to put <NUMBER> objects of <SIZE> to <BUCKET> without disk IO") {
 
-    private val unitList = SizeUnits.names().joinToString(",")
+    private val unitList = SizeUnits.names().joinToString(",") { it.first }
 
     private val itemNumber: Int by option(
         "-n",
@@ -55,7 +55,12 @@ class WriteToTapeCommand :
     )
         .prompt()
         .validate { require(it.isNotEmpty()) { "Data policy must not be blank" } }
-    private val priority: Priority by option("-pri", "--priority", envvar = "BP_PRIORITY", help = "Priority for transfers")
+    private val priority: Priority by option(
+        "-pri",
+        "--priority",
+        envvar = "BP_PRIORITY",
+        help = "Priority for transfers"
+    )
         .choice(*getPriorities())
         .default(Priority.NORMAL)
 
@@ -67,11 +72,13 @@ class WriteToTapeCommand :
                 .build()
         )
         client.ensureBucketExistsByName(bucket, dataPolicy)
-        val job = client.startWriteJob(bucket, ds3ObjectSequence().toList(), WriteJobOptions.create()
-            .withPriority(priority))
+        val job = client.startWriteJob(
+            bucket, ds3ObjectSequence().toList(), WriteJobOptions.create()
+                .withPriority(priority)
+        )
         job
             .withMaxParallelRequests(threads)
-            .transfer(MemoryBuffer(bufferSize, (size * Math.pow(10.0, sizeUnit.power)).toLong(), randomSource ?: Random))
+            .transfer(MemoryBuffer(bufferSize, (size * Math.pow(10.0, sizeUnit.power)).toLong(), randomSource))
     }
 
     private var itemName: Long = 0L

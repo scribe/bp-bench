@@ -55,7 +55,7 @@ abstract class BpCommand(
         .int()
         .default(10)
         .validate { require(it > 0) { "Thread number must be a positive number" } }
-    internal val randomSource: Random by option("-s", "--seed", help = "Random seed for RNG")
+    internal val randomSource: Random by option("-r", "--random-seed", help = "Random seed for RNG")
         .convert {
             try {
                 Random(it.toLong())
