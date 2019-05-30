@@ -10,13 +10,13 @@ import java.nio.ByteBuffer
 import java.nio.channels.SeekableByteChannel
 import kotlin.random.Random
 
-class MemoryObjectChannelBuilder(private val bufferSize: Int, private val sizeOfFiles: Long) :
+class MemoryBuffer(private val bufferSize: Int, private val sizeOfFiles: Long, private val random: Random) :
     Ds3ClientHelpers.ObjectChannelBuilder {
 
     override fun buildChannel(key: String): SeekableByteChannel = DevNullByteChannel(bufferSize, sizeOfFiles)
 
     private inner class DevNullByteChannel(private val bufferSize: Int, private val limit: Long) : SeekableByteChannel {
-        private val backingArray: ByteArray = Random.nextBytes(bufferSize)
+        private val backingArray: ByteArray = random.nextBytes(bufferSize)
         private var position: Int = 0
         private var isOpen: Boolean = true
 

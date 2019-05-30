@@ -6,7 +6,7 @@
 
 package com.spectralogic.bp.bench.cli
 
-import com.github.ajalt.clikt.parameters.options.convert
+import com.github.ajalt.clikt.parameters.options.default
 import com.github.ajalt.clikt.parameters.options.option
 import com.github.ajalt.clikt.parameters.options.prompt
 import com.github.ajalt.clikt.parameters.options.validate
@@ -23,8 +23,8 @@ import com.spectralogic.ds3client.models.Priority
 import com.spectralogic.ds3client.models.bulk.Ds3Object
 import com.spectralogic.ds3client.models.common.Credentials
 import com.spectralogic.ds3client.networking.FailedRequestException
-import java.nio.channels.Channels
 import java.time.Instant
+import kotlin.random.Random
 
 class WriteToTapeCommand :
     BpCommand(name = "put", help = "Attempt to put <NUMBER> objects of <SIZE> to <BUCKET> without disk IO") {
@@ -46,9 +46,7 @@ class WriteToTapeCommand :
         "--units",
         help = "Units of files to write <$unitList>"
     ).choice(*SizeUnits.names())
-        .convert {
-            SizeUnits.parse(it)
-        }.prompt("Units for size: ($unitList)")
+        .prompt("Units for size: ($unitList)")
     private val dataPolicy by option(
         "-d",
         "--datapolicy",
@@ -57,6 +55,9 @@ class WriteToTapeCommand :
     )
         .prompt()
         .validate { require(it.isNotEmpty()) { "Data policy must not be blank" } }
+    private val priority: Priority by option("-pri", "--priority", envvar = "BP_PRIORITY", help = "Priority for transfers")
+        .choice(*getPriorities())
+        .default(Priority.NORMAL)
 
     override fun run() {
         val client = Ds3ClientHelpers.wrap(
@@ -67,10 +68,10 @@ class WriteToTapeCommand :
         )
         client.ensureBucketExistsByName(bucket, dataPolicy)
         val job = client.startWriteJob(bucket, ds3ObjectSequence().toList(), WriteJobOptions.create()
-            .withPriority(Priority.URGENT))
+            .withPriority(priority))
         job
             .withMaxParallelRequests(threads)
-            .transfer(MemoryObjectChannelBuilder(bufferSize, (size * Math.pow(10.0, sizeUnit.power)).toLong()))
+            .transfer(MemoryBuffer(bufferSize, (size * Math.pow(10.0, sizeUnit.power)).toLong(), randomSource ?: Random))
     }
 
     private var itemName: Long = 0L
@@ -98,4 +99,10 @@ fun Ds3ClientHelpers.ensureBucketExistsByName(bucket: String, dataPolicy: String
             error("Creating $bucket failed because it was created by another thread or process")
         }
     }
+}
+
+fun getPriorities(): Array<Pair<String, Priority>> {
+    return Priority.values()
+        .map { Pair(it.name, it) }
+        .toTypedArray()
 }

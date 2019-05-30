@@ -7,11 +7,13 @@
 package com.spectralogic.bp.bench.cli
 
 import com.github.ajalt.clikt.core.CliktCommand
+import com.github.ajalt.clikt.parameters.options.convert
 import com.github.ajalt.clikt.parameters.options.default
 import com.github.ajalt.clikt.parameters.options.option
 import com.github.ajalt.clikt.parameters.options.prompt
 import com.github.ajalt.clikt.parameters.options.validate
 import com.github.ajalt.clikt.parameters.types.int
+import kotlin.random.Random
 
 abstract class BpCommand(
     help: String = "",
@@ -20,6 +22,7 @@ abstract class BpCommand(
     invokeWithoutSubcommand: Boolean = false,
     printHelpOnEmptyArgs: Boolean = false
 ) : CliktCommand(help, epilog, name, invokeWithoutSubcommand, printHelpOnEmptyArgs) {
+    val ONE_MB = 1048576
     internal val endpoint by option(
         "-bp",
         "--blackpearl",
@@ -46,10 +49,19 @@ abstract class BpCommand(
     ).prompt("Target Black Pearl bucket").validate { require(it.isNotEmpty()) { "Bucket name cannot be empty" } }
     internal val bufferSize by option("-bb", "--buffer-size", help = "Size of buffer in bytes. Defaults to 1 MB")
         .int()
-        .default(1048576)
+        .default(ONE_MB)
         .validate { require(it > 0) { "Buffer size must be a positive number" } }
     internal val threads by option("-t", "--threads", help = "Threads to use during transfer. Defaults to 10")
         .int()
         .default(10)
-        .validate { require(it > 0) {"Thread number must be a positive number"} }
+        .validate { require(it > 0) { "Thread number must be a positive number" } }
+    internal val randomSource: Random by option("-s", "--seed", help = "Random seed for RNG")
+        .convert {
+            try {
+                Random(it.toLong())
+            } catch (t: Throwable) {
+                fail("seed could not be converted to a number")
+            }
+        }
+        .default(Random)
 }
